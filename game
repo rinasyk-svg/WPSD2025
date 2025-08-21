@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Error Catch Game - Patient Safety</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f8f9fa;
+    }
+    h1 {
+      color: #ff6600;
+    }
+    #game-area {
+      width: 400px;
+      height: 500px;
+      margin: 20px auto;
+      border: 2px solid #ccc;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .item {
+      position: absolute;
+      font-size: 28px;
+      user-select: none;
+    }
+    #patient {
+      position: absolute;
+      bottom: 0;
+      font-size: 40px;
+      cursor: pointer;
+      user-select: none;
+    }
+    #score, #timer, #level {
+      font-size: 20px;
+      margin-top: 10px;
+      color: #333;
+    }
+    #game-over {
+      font-size: 24px;
+      color: #d35400;
+      display: none;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 20px;
+      font-size: 16px;
+      background-color: #ff6600;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #e67e22; }
+  </style>
+</head>
+<body>
+  <h1>World Patient Safety Day 2025</h1>
+  <h2>⚠️ Error Catch Game ⚠️</h2>
+  <p>Move the patient icon to catch GOOD items and avoid BAD items!</p>
+
+  <div id="game-area">
+    <div id="patient">🧑‍⚕️</div>
+  </div>
+  <div id="score">Score: 0</div>
+  <div id="timer">Time: 60s</div>
+  <div id="level">Level: Safety Novice</div>
+  <div id="game-over"></div>
+  <button onclick="startGame()">Start Game</button>
+
+  <script>
+    const gameArea = document.getElementById("game-area");
+    const scoreBoard = document.getElementById("score");
+    const timerBoard = document.getElementById("timer");
+    const levelBoard = document.getElementById("level");
+    const gameOverText = document.getElementById("game-over");
+    const patient = document.getElementById("patient");
+
+    let score = 0;
+    let time = 60;
+    let gameInterval;
+    let spawnInterval;
+
+    const items = [
+      { symbol: "💩", error: true },
+      { symbol: "🍺", error: true },
+      { symbol: "☢️", error: true },
+      { symbol: "🦟", error: true },
+      { symbol: "🔪", error: true },
+      { symbol: "🩻", error: true },
+      { symbol: "💊", error: false },
+      { symbol: "🚬", error: true }
+    ];
+
+    // 마우스 이동으로 환자 이동
+    gameArea.addEventListener("mousemove", (e) => {
+      const rect = gameArea.getBoundingClientRect();
+      let x = e.clientX - rect.left - patient.offsetWidth / 2;
+      x = Math.max(0, Math.min(rect.width - patient.offsetWidth, x));
+      patient.style.left = x + "px";
+    });
+
+    function spawnItem() {
+      const itemData = items[Math.floor(Math.random() * items.length)];
+      const item = document.createElement("div");
+      item.classList.add("item");
+      item.textContent = itemData.symbol;
+      item.style.left = Math.random() * 360 + "px";
+      item.style.top = "-30px";
+
+      gameArea.appendChild(item);
+
+      const speed = Math.random() * 3 + 2; // 속도 2~5px
+      let fall = setInterval(() => {
+        let top = parseFloat(item.style.top);
+        item.style.top = top + speed + "px";
+
+        // 충돌 감지
+        const patientRect = patient.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+        if (
+          itemRect.bottom >= patientRect.top &&
+          itemRect.left < patientRect.right &&
+          itemRect.right > patientRect.left &&
+          itemRect.bottom < gameArea.getBoundingClientRect().bottom
+        ) {
+          if (!itemData.error) score++;
+          else score = Math.max(0, score - 1);
+          scoreBoard.textContent = "Score: " + score;
+          updateLevel();
+          clearInterval(fall);
+          item.remove();
+        }
+
+        if (top > 500) {
+          clearInterval(fall);
+          item.remove();
+        }
+      }, 20);
+    }
+
+    function updateLevel() {
+      let level = "";
+      if (score < 5) level = "Safety Novice";
+      else if (score < 10) level = "Safety Keeper";
+      else if (score < 15) level = "Safety Hero";
+      else level = "Safety Expert";
+      levelBoard.textContent = "Level: " + level;
+    }
+
+    function startGame() {
+      score = 0;
+      time = 60;
+      scoreBoard.textContent = "Score: 0";
+      timerBoard.textContent = "Time: 60s";
+      levelBoard.textContent = "Level: Safety Novice";
+      gameOverText.style.display = "none";
+      gameArea.innerHTML = "";
+      gameArea.appendChild(patient);
+
+      spawnInterval = setInterval(spawnItem, 800);
+      gameInterval = setInterval(() => {
+        time--;
+        timerBoard.textContent = "Time: " + time + "s";
+        if (time <= 0) endGame();
+      }, 1000);
+    }
+
+    function endGame() {
+      clearInterval(spawnInterval);
+      clearInterval(gameInterval);
+      gameOverText.style.display = "block";
+      gameOverText.textContent = `Game Over! 최종 점수: ${score}점, ${levelBoard.textContent}`;
+    }
+  </script>
+</body>
+</html>
